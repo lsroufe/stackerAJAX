@@ -31,6 +31,20 @@ var showQuestion = function(question) {
 	return result;
 };
 
+var showInspiration = function(item) {
+	var result = $('.templates .inspiration').clone();
+	var user = result.find('.user a')
+		.attr('href', item.user.link)
+		.text(item.user.display_name);
+
+	var image = "<img src='" + item.user.profile_image + "'>";
+	result.find('.image').append(image);
+	result.find('.post-count').text(item.post_count);
+	result.find('.score').text(item.score);
+
+	return result;
+};
+
 
 // this function takes the results object from StackOverflow
 // and returns the number of results and tags to be appended to DOM
@@ -81,6 +95,32 @@ var getUnanswered = function(tags) {
 	});
 };
 
+var getTopAnswerers = function(tag) {
+	// the parameters we need to pass in our request to StackOverflow's API
+    var url = "http://api.stackexchange.com/2.2/tags/" + tag + "/top-answerers/all_time";
+    var request = {
+        site: 'stackoverflow'
+    };
+
+    var result = $.ajax({
+        url: url,
+        data: request,
+        dataType: "jsonp",
+        type: "GET"
+    }).done(function(result) {
+        var searchResults = showSearchResults(tag, result.items.length);
+        $('.search-results').html(searchResults);
+        console.log('got answerers for', tag);
+
+        $.each(result.items, function(index, item) {
+            var inspiration = showInspiration(item);
+            $('.results').append(inspiration);
+        });
+    }).fail(function() {
+        alert('error');
+    });
+};
+
 
 $(document).ready( function() {
 	$('.unanswered-getter').submit( function(e){
@@ -90,5 +130,14 @@ $(document).ready( function() {
 		// get the value of the tags the user submitted
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
+	});
+	$('.inspiration-getter').submit( function(e){
+		e.preventDefault();
+		//zero out results if previous search has run
+		$('.results').html('');
+		//get the value of the tags the user submitted
+		var tag = $(this).find("input[name='answerers']").val();
+		console.log(tag);
+		getTopAnswerers(tag);
 	});
 });
